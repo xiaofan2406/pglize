@@ -7,12 +7,14 @@ const config = require('./config')[process.env.NODE_ENV || 'test'];
 
 const { createModel, db } = require('../src/')(config);
 
+const testTableName = 'users';
+
 before('check testing table', (done) => {
   co(function* () {
-    const result = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name=$2)', ['public', 'users']);
+    const result = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=$1 AND table_name=$2)', ['public', testTableName]);
     if (!result.exists) {
       yield db.none(`
-        CREATE TABLE users (id SERIAL,
+        CREATE TABLE ${testTableName} (id SERIAL,
         email character varying(255) NOT NULL,
         password character varying(255) NOT NULL,
         activated boolean NOT NULL DEFAULT false,
@@ -163,7 +165,7 @@ describe('save to database', () => {
         required: true
       }
     }, {
-      tableName: 'users'
+      tableName: testTableName
     });
 
     afterEach('remove the user', (done) => {
@@ -250,7 +252,7 @@ describe('save to database', () => {
         default: 10
       }
     }, {
-      tableName: 'users',
+      tableName: testTableName,
       preSave() {
         this.credit += 100;
         return Promise.resolve();
@@ -324,7 +326,7 @@ describe('update entry in database', () => {
         }
       }
     }, {
-      tableName: 'users'
+      tableName: testTableName
     });
 
     afterEach('remove the user', (done) => {
@@ -447,7 +449,7 @@ describe('update entry in database', () => {
         }
       }
     }, {
-      tableName: 'users'
+      tableName: testTableName
     });
 
     afterEach('remove the user', (done) => {
@@ -561,7 +563,7 @@ describe('update entry in database', () => {
         }
       }
     }, {
-      tableName: 'users',
+      tableName: testTableName,
       preUpdate(updates) {
         if (this.password !== updates.password) {
           updates.password = 'preupdatepassword';
@@ -640,7 +642,7 @@ describe('delete entry in database and isSaved method', () => {
       required: true
     }
   }, {
-    tableName: 'users',
+    tableName: testTableName,
     preDelete() {
       this.something = true;
       return Promise.resolve();
@@ -772,7 +774,7 @@ describe('instance.selfie', () => {
       required: true
     }
   }, {
-    tableName: 'users'
+    tableName: testTableName
   });
 
   it('returns an empty object when instance is not saved', () => {
@@ -865,6 +867,48 @@ describe('instance.selfie', () => {
 });
 
 
+describe('timestamps option', () => {
+  const UserModel = createModel('User', {
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    }
+  }, {
+    tableName: testTableName,
+    timestamps: true
+  });
+
+  const user = new UserModel({
+    email: 'bonjovi@mail.com',
+    password: 'password'
+  });
+
+  it('should not have timestamps before save', () => {
+    expect(user.createdAt).to.not.exist;
+    expect(user.updatedAt).to.not.exist;
+  });
+
+  it('generates createdAt and updatedAt values after save', (done) => {
+    co(function* () {
+      yield user.save();
+      expect(user.createdAt).to.exist;
+      expect(user.updatedAt).to.exist;
+
+      expect(user.createdAt.constructor).to.equal(Date);
+      expect(user.updatedAt.constructor).to.equal(Date);
+
+      yield user.delete();
+    })
+    .then(done)
+    .catch(done);
+  });
+});
+
+
 describe('custom instance methods', () => {
   const UserModel = createModel('User', {
     email: {
@@ -876,7 +920,7 @@ describe('custom instance methods', () => {
       required: true
     }
   }, {
-    tableName: 'users',
+    tableName: testTableName,
     instanceMethods: {
       selfie() {
         return {
@@ -903,6 +947,80 @@ describe('custom instance methods', () => {
     expect(user.selfie).to.exist;
 
     expect(user.selfie.unknown).to.not.exist;
+  });
+});
+
+
+describe('findOne', () => {
+  const UserModel = createModel('User', {
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    }
+  }, {
+    tableName: testTableName
+  });
+
+  let user;
+  beforeEach('create a test user', (done) => {
+    user = new UserModel({
+      email: 'bonjovi@mail.com',
+      password: 'password'
+    });
+
+    user.save().then(() => done()).catch(done);
+  });
+
+  it('returns null when nothing found', (done) => {
+    UserModel.findOne('email', 'unknown@mail.com')
+    .then((res) => {
+      expect(res).to.be.null;
+      done();
+    })
+    .catch(done);
+  });
+
+  it('returns the user instance when found', (done) => {
+    UserModel.findOne('email', 'bonjovi@mail.com')
+    .then((found) => {
+      expect(found).to.exist;
+      expect(found.constructor).to.equal(UserModel);
+      expect(found.email).to.equal('bonjovi@mail.com');
+      expect(found.isSaved).to.be.true;
+      expect(found.selfie.email).to.equal('bonjovi@mail.com');
+
+      done();
+    })
+    .catch(done);
+  });
+
+  it('returns the only one user when multiple exist', (done) => {
+    co(function* () {
+      const another = new UserModel({
+        email: 'another@mail.com',
+        password: 'password'
+      });
+      yield another.save();
+
+      const found = yield UserModel.findOne('password', 'password');
+      expect(found).to.exist;
+      expect(found.constructor).to.equal(UserModel);
+      expect(found.email).to.equal('bonjovi@mail.com');
+      expect(found.isSaved).to.be.true;
+      expect(found.selfie.email).to.equal('bonjovi@mail.com');
+
+      yield another.delete();
+    })
+    .then(done)
+    .catch(done);
+  });
+
+  afterEach('remove the test user', (done) => {
+    user.delete().then(() => done()).catch(done);
   });
 });
 

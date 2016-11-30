@@ -1,11 +1,12 @@
 const _debug = require('debug');
 const co = require('co');
 const { InstanceError, ValidationError } = require('./error');
+const pkg = require('../package.json');
 
 
 module.exports = db => (modelName, schema, modelOptions = {}) => {
   // TODO validation for schema, modelOptions
-  const debug = _debug(`Model:${modelName}`);
+  const debug = _debug(`${pkg.name}:${modelName}`);
 
   const sanitizeData = (data) => {
     const validKeys = Object.keys(schema);
@@ -268,17 +269,16 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
         db.any(query, value)
         .then((result) => {
           let data;
-          if (result.length === 1) {
-            data = result;
-          } else if (result.length > 1) {
+          if (result.length > 0) {
             data = result[0];
           } else {
-            reject();
+            resolve(null);
           }
           const instance = new obj[modelName](data);
           instance._dataUpdate(data);
           resolve(instance);
-        });
+        })
+        .catch(reject);
       });
     }
   });
