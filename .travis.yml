@@ -10,7 +10,7 @@ node_js:
 before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
   - rm -rf ./coverage
-nstall:
+install:
   - npm i -g codecov
 script:
   - NODE_ENV=travis yarn run cov
