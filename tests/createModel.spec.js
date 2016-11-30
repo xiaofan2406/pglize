@@ -29,6 +29,7 @@ before('check testing table', (done) => {
   .catch(done);
 });
 
+
 describe('object construction', () => {
   const UserModel = createModel('User', {
     email: {
@@ -759,6 +760,7 @@ describe('delete entry in database and isSaved method', () => {
   });
 });
 
+
 describe('instance.selfie', () => {
   const UserModel = createModel('User', {
     email: {
@@ -862,9 +864,48 @@ describe('instance.selfie', () => {
   });
 });
 
-describe('custom instance methods', () => {
 
+describe('custom instance methods', () => {
+  const UserModel = createModel('User', {
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    }
+  }, {
+    tableName: 'users',
+    instanceMethods: {
+      selfie() {
+        return {
+          unknown: 'unknown'
+        };
+      },
+      isGood() {
+        return this.email === 'bonjovi@mail.com';
+      }
+    }
+  });
+
+  const user = new UserModel({
+    email: 'bonjovi@mail.com',
+    password: 'password'
+  });
+
+  it('attaches instance methods', () => {
+    expect(user.isGood).to.exist;
+    expect(user.isGood).to.be.a('function');
+  });
+
+  it('does not overwrite default instance properties', () => {
+    expect(user.selfie).to.exist;
+
+    expect(user.selfie.unknown).to.not.exist;
+  });
 });
+
 
 describe('custom static methods', () => {
 

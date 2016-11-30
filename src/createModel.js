@@ -70,18 +70,6 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
         }
       });
 
-      // define instance methods
-      if (modelOptions.methods) {
-        for (const name in modelOptions.methods) {
-          if ({}.hasOwnProperty.call(modelOptions.methods, name)) {
-            debug('Adding instance methods...', name);
-            Object.defineProperty(this, name, {
-              value: modelOptions.methods[name].bind(this)
-            });
-          }
-        }
-      }
-
       // helper function for validation
       Object.defineProperty(this, '_validate', {
         value(_data, full = true) {
@@ -252,6 +240,23 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
           }));
         }
       });
+
+      // define instance methods
+      if (modelOptions.instanceMethods) {
+        const preserved = Object.getOwnPropertyNames(this);
+        for (const name in modelOptions.instanceMethods) {
+          if ({}.hasOwnProperty.call(modelOptions.instanceMethods, name)) {
+            debug('Adding instance methods...', name);
+            if (preserved.includes(name)) {
+              debug('\tSkipping preserve instance property', name);
+            } else {
+              Object.defineProperty(this, name, {
+                value: modelOptions.instanceMethods[name].bind(this)
+              });
+            }
+          }
+        }
+      }
     }
   };
 
