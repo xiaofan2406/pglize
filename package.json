@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/mocha/bin/_mocha --recursive --timeout 5000 ./tests/",
-    "cov": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --recursive --timeout 5000 ./tests/"
+    "cov": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --recursive --timeout 5000 ./tests/"
   },
   "main": "src/index.js",
   "devDependencies": {
