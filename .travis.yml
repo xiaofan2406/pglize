@@ -13,5 +13,5 @@ before_script:
 install:
   - npm i -g codecov
 script:
-  - NODE_ENV=travis yarn run cov
+  - NODE_ENV=travis npm run cov
   - codecov
