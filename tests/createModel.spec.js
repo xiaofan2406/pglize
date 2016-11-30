@@ -938,7 +938,7 @@ describe('custom instance methods', () => {
     password: 'password'
   });
 
-  it('attaches instance methods', () => {
+  it('attaches instance methods with `this` binded to the instance', () => {
     expect(user.isGood).to.exist;
     expect(user.isGood).to.be.a('function');
   });
@@ -973,6 +973,15 @@ describe('findOne', () => {
     });
 
     user.save().then(() => done()).catch(done);
+  });
+
+  it('rejects a ModelError if parameters are wrong', (done) => {
+    UserModel.findOne()
+    .catch((err) => {
+      expect(err.name).to.equal('ModelError');
+      expect(err.message).to.equal('Usage: User.findOne(name, value)');
+      done();
+    });
   });
 
   it('returns null when nothing found', (done) => {
@@ -1025,6 +1034,48 @@ describe('findOne', () => {
 });
 
 
-describe('custom static methods', () => {
+describe('custom model methods', () => {
+  const UserModel = createModel('User', {
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    }
+  }, {
+    tableName: testTableName,
+    modelMethods: {
+      getName() {
+        return this.name;
+      },
+      findOne(name, value) {
+        return new Promise((resolve) => {
+          resolve(name + value);
+        });
+      }
+    }
+  });
 
+  it('attaches model methods with `this` binded to the model', () => {
+    expect(UserModel.getName).to.be.a('function');
+
+    const res = UserModel.getName();
+
+    expect(res).to.equal('User');
+  });
+
+  it('does not overwrite default model properties', (done) => {
+    expect(UserModel.findOne).to.be.a('function');
+
+
+    UserModel.findOne('email', 'value')
+    .then((res) => {
+      expect(res).to.not.equal('emailvalue');
+      expect(res).to.be.null;
+      done();
+    })
+    .catch(done);
+  });
 });

@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-expressions */
 const { expect } = require('chai');
 
-const { InstanceError, ValidationError } = require('../src/error');
+const { InstanceError, ValidationError, ModelError } = require('../src/error');
 
 describe('InstanceError', () => {
   const err = new InstanceError('Model', {
@@ -42,6 +42,7 @@ describe('InstanceError', () => {
   });
 });
 
+
 describe('ValidationError', () => {
   const err = new ValidationError('Model', {
     type: 'errtype'
@@ -79,3 +80,43 @@ describe('ValidationError', () => {
     expect(error.name).to.equal('ValidationError');
   });
 });
+
+
+describe('ModelError', () => {
+  const err = new ModelError('Model', {
+    type: 'errtype'
+  });
+
+  it('has name ModelError', () => {
+    expect(err.name).to.equal('ModelError');
+  });
+
+  it('has stack trace', () => {
+    expect(err.stack).to.exist;
+  });
+
+  it('has default message', () => {
+    expect(err.message).to.equal('A Model model error has occured');
+  });
+
+  it('has extra info', () => {
+    expect(err.type).to.equal('errtype');
+  });
+
+  it('overwrites error message from info', () => {
+    const error = new ModelError('Model', {
+      message: 'errmsg'
+    });
+
+    expect(error.message).to.equal('errmsg');
+  });
+
+  it('does NOT overwrite name', () => {
+    const error = new ModelError('Model', {
+      name: 'errname'
+    });
+
+    expect(error.name).to.equal('ModelError');
+  });
+});
+

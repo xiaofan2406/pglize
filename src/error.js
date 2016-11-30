@@ -26,7 +26,22 @@ ValidationError.prototype = Object.create(InstanceError.prototype);
 ValidationError.prototype.constructor = InstanceError;
 
 
+function ModelError(modelName, info = {}) {
+  Error.call(this);
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this);
+  }
+
+  this.message = info.message || `A ${modelName} model error has occured`;
+  Object.assign(this, info);
+  this.name = 'ModelError';
+}
+ModelError.prototype = Object.create(Error.prototype);
+ModelError.prototype.constructor = Error;
+
+
 module.exports = {
   InstanceError,
-  ValidationError
+  ValidationError,
+  ModelError
 };

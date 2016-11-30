@@ -1,6 +1,6 @@
 const _debug = require('debug');
 const co = require('co');
-const { InstanceError, ValidationError } = require('./error');
+const { InstanceError, ValidationError, ModelError } = require('./error');
 const pkg = require('../package.json');
 
 
@@ -264,6 +264,12 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
   Object.defineProperty(obj[modelName], 'findOne', {
     value(name, value) {
       return new Promise((resolve, reject) => {
+        if (typeof name !== 'string' || typeof value === 'undefined') {
+          reject(new ModelError(modelName, {
+            message: `Usage: ${modelName}.findOne(name, value)`
+          }));
+        }
+
         const query = `SELECT * from ${tableName} WHERE "${name}"=$1`;
         debug('findOne', query);
         db.any(query, value)
@@ -278,10 +284,32 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
           instance._dataUpdate(data);
           resolve(instance);
         })
-        .catch(reject);
+        .catch((err) => {
+          reject(new ModelError(modelName, {
+            message: err.message,
+            path: `${modelName}.findOne`
+          }));
+        });
       });
     }
   });
+
+  // define model methods
+  if (modelOptions.modelMethods) {
+    const preserved = Object.getOwnPropertyNames(obj[modelName]);
+    for (const name in modelOptions.modelMethods) {
+      if ({}.hasOwnProperty.call(modelOptions.modelMethods, name)) {
+        debug('Adding model methods...', name);
+        if (preserved.includes(name)) {
+          debug('\tSkipping preserve model property', name);
+        } else {
+          Object.defineProperty(obj[modelName], name, {
+            value: modelOptions.modelMethods[name].bind(obj[modelName])
+          });
+        }
+      }
+    }
+  }
 
   return obj[modelName];
 };
