@@ -13,5 +13,5 @@ before_script:
 install:
   - npm i -g codecov
 script:
-  - NODE_ENV=travis ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec ./tests/
+  - NODE_ENV=travis ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec ./tests/*.spec.js
   - codecov
