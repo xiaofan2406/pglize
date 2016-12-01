@@ -2,6 +2,7 @@ const _debug = require('debug');
 const co = require('co');
 const { InstanceError, ValidationError, ModelError } = require('./error');
 const { getTypeValidate } = require('./validate');
+const genTable = require('./table');
 const pkg = require('../package.json');
 
 
@@ -21,6 +22,16 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
   const isFunc = func => func && typeof func === 'function';
 
   const tableName = modelOptions.tableName || modelName.toLowerCase();
+
+
+  // generates default id column as primary key
+  if (!schema.id) {
+    schema.id = {
+      type: 'serial',
+      primary: true
+    };
+  }
+
 
   const obj = {
     [modelName]: function(data = {}) { // eslint-disable-line
@@ -64,15 +75,15 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
 
       // helper for data validation before save and update
       Object.defineProperty(this, '_validate', {
-        value(_data, full = true) {
+        value(raw, full = true) {
           return new Promise((resolve, reject) => {
             const errors = [];
 
             for (const name in schema) {
               if ({}.hasOwnProperty.call(schema, name)) {
-                if (typeof _data[name] !== 'undefined') {
+                if (typeof raw[name] !== 'undefined' && raw[name] !== null) {
                   // basic type validation
-                  if (!getTypeValidate(schema[name].type)(_data[name])) {
+                  if (!getTypeValidate(schema[name].type)(raw[name])) {
                     errors.push({ name, type: 'type' });
                     continue;
                   }
@@ -80,14 +91,13 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
                   // custom schema validation
                   if (schema[name].validate) {
                     const validate = schema[name].validate.bind(this);
-                    if (!validate(_data[name])) {
+                    if (!validate(raw[name])) {
                       errors.push({ name, type: 'custom' });
                       continue;
                     }
                   }
                 } else if (full === true) {
-                  // required validation
-                  if (schema[name].required === true) { // eslint-disable-line no-lonely-if
+                  if (schema[name].required === true) {
                     errors.push({ name, type: 'required' });
                     continue;
                   }
@@ -266,6 +276,26 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
       }
     }
   };
+
+  Object.defineProperty(obj[modelName], 'syncTable', {
+    value(force = false) {
+      if (force === true) {
+        return co(function* () {
+          const found = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', [tableName]);
+          if (found.exists === true) {
+            debug('syncTable: dropping table...', tableName);
+            yield db.none('DROP TABLE $1~', [tableName]);
+          }
+
+          const result = genTable(tableName, schema);
+          debug('syncTable: creating table...', tableName);
+          debug('\t', result.query);
+          yield db.none(result.query, result.values);
+        });
+      }
+      return Promise.resolve();
+    }
+  });
 
   Object.defineProperty(obj[modelName], 'findOne', {
     value(name, value) {

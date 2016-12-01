@@ -120,6 +120,7 @@ describe('save to database', () => {
 
     it('runs required validation', (done) => {
       const user = new UserModel({
+        email: null,
         credit: 200
       });
 
@@ -964,6 +965,76 @@ describe('custom instance methods', () => {
   });
 });
 
+describe('syncTable(force=false)', () => {
+  const UserModel = createModel('User', {
+    email: {
+      type: types.VARCHAR(),
+      required: true
+    },
+    password: {
+      type: types.VARCHAR(),
+      required: true
+    },
+    credit: {
+      type: types.INTEGER,
+      validate(value) {
+        return value > 10;
+      }
+    }
+  }, {
+    tableName: 'syncTest'
+  });
+
+  afterEach('cleanup tables', (done) => {
+    db.none('DROP TABLE $1~', 'syncTest')
+    .then(done)
+    .catch(() => done());
+  });
+
+  it('does nothing if force is false', (done) => {
+    co(function* () {
+      yield UserModel.syncTable();
+      const found = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['syncTest']);
+      expect(found.exists).to.be.false;
+    })
+    .then(done)
+    .catch(done);
+  });
+
+  it('creates a new table if force is true', (done) => {
+    co(function* () {
+      yield UserModel.syncTable(true);
+
+      const found = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
+      expect(found.length).to.equal(4);
+      const columnNames = found.map(i => i.column_name);
+      expect(columnNames).to.include.members(['id', 'email', 'password', 'credit']);
+      // TODO criteria sync, primiay null etc.
+    })
+    .then(done)
+    .catch(done);
+  });
+
+  it('drop the table if exists and creates a new table if force is true', (done) => {
+    co(function* () {
+      yield db.none('CREATE TABLE $1~ (id integer)', 'syncTest');
+
+      const beforeSync = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
+      expect(beforeSync.length).to.equal(1);
+      expect(beforeSync[0].column_name).to.equal('id');
+
+      yield UserModel.syncTable(true);
+
+      const found = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
+      expect(found.length).to.equal(4);
+      const columnNames = found.map(i => i.column_name);
+      expect(columnNames).to.include.members(['id', 'email', 'password', 'credit']);
+      // TODO criteria test, primiay null etc.
+    })
+    .then(done)
+    .catch(done);
+  });
+});
 
 describe('findOne', () => {
   const UserModel = createModel('User', {

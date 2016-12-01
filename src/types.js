@@ -5,6 +5,7 @@ const INTEGER = 'integer';
 const BIGINT = 'bigint';
 const VARCHAR = (size = 255) => `varchar(${size})`;
 const NUMERIC = (prec = 8, scale = 4) => `numeric(${prec},${scale})`;
+const TIMESTAMP = 'timestamp with time zone';
 
 
 module.exports = {
@@ -14,5 +15,6 @@ module.exports = {
   INTEGER,
   BIGINT,
   VARCHAR,
-  NUMERIC
+  NUMERIC,
+  TIMESTAMP
 };

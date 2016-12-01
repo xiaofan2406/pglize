@@ -20,6 +20,7 @@ module.exports = {
     "no-underscore-dangle": 0, // disable for private methods
     "no-restricted-syntax": ["error", "WithStatement"],
     "no-continue": 0,
+    "no-template-curly-in-string": 0,
     "import/no-extraneous-dependencies": 0
   }
 };

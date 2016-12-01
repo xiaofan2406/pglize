@@ -1,54 +1,49 @@
-// TODO types
-function mapTypes(type) {
-  switch (type.constructor) {
-    case Number:
-      return 'integer';
-    case String:
-      return 'character varying(255)';
-    case Date:
-      return 'timestamps with time zone';
-    case Boolean:
-      return 'boolean';
-    default:
-      return 'json';
-  }
-}
-
-
 function genColumn(name, attr) {
-  let column = name;
-  column += mapTypes(attr.type);
+  const constraint = [`"${name}"`, attr.type];
 
   if (attr.default) {
-    column += `DEFAULT ${attr.default}`;
+    constraint.push(`DEFAULT $\{${name}}`);
   }
 
   if (attr.required) {
-    column += 'NOT NULL';
+    constraint.push('NOT NULL');
   }
 
   if (attr.unique) {
-    column += 'UNIQUE';
+    constraint.push('UNIQUE');
   }
 
-  return column;
+  if (attr.primary) {
+    constraint.push('PRIMARY KEY');
+  }
+
+  return constraint.join(' ');
 }
 
 
 function genTable(name, attrs) {
-  let query = `CREATE TABLE ${name} (`;
+  let query = 'CREATE TABLE ${tableName~} (';
 
   const columns = [];
-  columns.push('id serial PRIMARY KEY');
+  const values = {
+    tableName: name
+  };
   for (const attrName in attrs) {
     if ({}.hasOwnProperty.call(attrs, attrName)) {
       columns.push(genColumn(attrName, attrs[attrName]));
+
+      if (attrs[attrName].default) {
+        values[attrName] = attrs[attrName].default;
+      }
     }
   }
-  query += columns.join(',');
+  query += columns.join(', ');
 
   query += ')';
-  return query;
+  return {
+    query,
+    values
+  };
 }
 
 
