@@ -994,8 +994,8 @@ describe('syncTable(force=false)', () => {
   it('does nothing if force is false', (done) => {
     co(function* () {
       yield UserModel.syncTable();
-      const found = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['syncTest']);
-      expect(found.exists).to.be.false;
+      const found = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
+      expect(found.length).to.equal(0);
     })
     .then(done)
     .catch(done);
