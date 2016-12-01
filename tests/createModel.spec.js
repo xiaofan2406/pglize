@@ -991,11 +991,17 @@ describe('syncTable(force=false)', () => {
     .catch(() => done());
   });
 
+  beforeEach('cleanup tables', (done) => {
+    db.none('DROP TABLE $1~', 'syncTest')
+    .then(done)
+    .catch(() => done());
+  });
+
   it('does nothing if force is false', (done) => {
     co(function* () {
       yield UserModel.syncTable();
-      const found = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
-      expect(found.length).to.equal(0);
+      const found = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['syncTest']);
+      expect(found.exists).to.be.false;
     })
     .then(done)
     .catch(done);
@@ -1017,9 +1023,6 @@ describe('syncTable(force=false)', () => {
 
   it('drop the table if exists and creates a new table if force is true', (done) => {
     co(function* () {
-      const shouldNotExist = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
-      expect(shouldNotExist.length).to.equal(0);
-
       yield db.none('CREATE TABLE $1~ (id integer)', 'syncTest');
 
       const beforeSync = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
