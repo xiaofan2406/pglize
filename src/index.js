@@ -1,7 +1,7 @@
 const pgPromise = require('pg-promise');
 
 const makeCreateModel = require('./createModel');
-
+const types = require('./types');
 
 module.exports = function (dbConfig, pgConfig) {
   const pgp = pgPromise(pgConfig);
@@ -10,6 +10,7 @@ module.exports = function (dbConfig, pgConfig) {
   return {
     pgp,
     db,
-    createModel: makeCreateModel(db)
+    createModel: makeCreateModel(db),
+    types
   };
 };

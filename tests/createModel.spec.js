@@ -4,10 +4,10 @@ const { expect } = require('chai');
 const co = require('co');
 
 const config = require('./config')[process.env.NODE_ENV || 'test'];
-
-const { createModel, db } = require('../src/')(config);
+const { createModel, db, types } = require('../src/')(config);
 
 const testTableName = 'users';
+
 
 before('check testing table', (done) => {
   co(function* () {
@@ -35,10 +35,10 @@ before('check testing table', (done) => {
 describe('object construction', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String
+      type: types.VARCHAR()
     },
     credit: {
-      type: Number,
+      type: types.INTEGER,
       default: 100
     }
   });
@@ -78,30 +78,42 @@ describe('save to database', () => {
   context('validations', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
+      AGE: {
+        type: types.NUMERIC()
+      },
       credit: {
-        type: Number,
+        type: types.INTEGER,
         default: 100,
         validate(value) {
           return value >= 100;
         }
+      },
+      activated: {
+        type: types.BOOLEAN
+      },
+      random: {
+        type: 'unkonwtype'
       }
     });
 
     it('runs basic type validation', (done) => {
       const user = new UserModel({
         email: 123456,
-        credit: 'what'
+        credit: 'what',
+        activated: 'true',
+        random: 'random'
       });
 
       user.save()
       .catch((err) => {
         expect(err.name).to.equal('ValidationError');
         expect(err.message).to.equal('User schema validation error');
-        expect(err.attr).to.include.members(['email', 'credit']);
-        expect(err.typeValidation).to.include.members(['email', 'credit']);
+        expect(err.attr).to.not.include.members(['random']);
+        expect(err.attr).to.include.members(['email', 'credit', 'activated']);
+        expect(err.typeValidation).to.include.members(['email', 'credit', 'activated']);
         done();
       });
     });
@@ -139,14 +151,16 @@ describe('save to database', () => {
 
     it('keeps tracks of all failed validations', (done) => {
       const user = new UserModel({
-        credit: 'okay then'
+        AGE: 'AGE',
+        credit: 10
       });
 
       user.save()
       .catch((err) => {
         expect(err.name).to.equal('ValidationError');
         expect(err.message).to.equal('User schema validation error');
-        expect(err.attr).to.include.members(['email', 'credit']);
+        expect(err.attr).to.include.members(['email', 'credit', 'AGE']);
+        expect(err.typeValidation).to.include.members(['AGE']);
         expect(err.requiredValidation).to.include.members(['email']);
         expect(err.customValidation).to.include.members(['credit']);
         done();
@@ -157,11 +171,11 @@ describe('save to database', () => {
   context('normal excution', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       password: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       }
     }, {
@@ -240,15 +254,15 @@ describe('save to database', () => {
   context('hooks', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       password: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       credit: {
-        type: Number,
+        type: types.INTEGER,
         default: 10
       }
     }, {
@@ -312,15 +326,15 @@ describe('update entry in database', () => {
   context('normal excution', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       password: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       credit: {
-        type: Number,
+        type: types.INTEGER,
         validate(value) {
           return value > 10;
         }
@@ -435,15 +449,15 @@ describe('update entry in database', () => {
   context('validations', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       password: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       credit: {
-        type: Number,
+        type: types.INTEGER,
         validate(value) {
           return value > 10;
         }
@@ -549,15 +563,15 @@ describe('update entry in database', () => {
   context('hooks', () => {
     const UserModel = createModel('User', {
       email: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       password: {
-        type: String,
+        type: types.VARCHAR(),
         required: true
       },
       credit: {
-        type: Number,
+        type: types.INTEGER,
         validate(value) {
           return value > 10;
         }
@@ -634,11 +648,11 @@ describe('update entry in database', () => {
 describe('delete entry in database and isSaved method', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {
@@ -766,11 +780,11 @@ describe('delete entry in database and isSaved method', () => {
 describe('instance.selfie', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {
@@ -870,11 +884,11 @@ describe('instance.selfie', () => {
 describe('timestamps option', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {
@@ -912,11 +926,11 @@ describe('timestamps option', () => {
 describe('custom instance methods', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {
@@ -954,11 +968,11 @@ describe('custom instance methods', () => {
 describe('findOne', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {
@@ -1037,11 +1051,11 @@ describe('findOne', () => {
 describe('custom model methods', () => {
   const UserModel = createModel('User', {
     email: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     },
     password: {
-      type: String,
+      type: types.VARCHAR(),
       required: true
     }
   }, {

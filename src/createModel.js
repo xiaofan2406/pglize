@@ -1,6 +1,7 @@
 const _debug = require('debug');
 const co = require('co');
 const { InstanceError, ValidationError, ModelError } = require('./error');
+const { getTypeValidate } = require('./validate');
 const pkg = require('../package.json');
 
 
@@ -42,24 +43,14 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
         value: {}
       });
 
-      Object.defineProperty(this, 'isSaved', {
-        get() {
-          return Boolean(this._data.id);
-        }
-      });
-
-      Object.defineProperty(this, 'selfie', {
-        get() {
-          return this._data;
-        }
-      });
-
+      // helper to empty data after instance.delete
       Object.defineProperty(this, '_stripData', {
         value() {
           this._data = {};
         }
       });
 
+      // helper to keep this._data and this updated with latest database result
       Object.defineProperty(this, '_dataUpdate', {
         value(newData) {
           for (const name in newData) {
@@ -71,7 +62,7 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
         }
       });
 
-      // helper function for validation
+      // helper for data validation before save and update
       Object.defineProperty(this, '_validate', {
         value(_data, full = true) {
           return new Promise((resolve, reject) => {
@@ -81,8 +72,9 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
               if ({}.hasOwnProperty.call(schema, name)) {
                 if (typeof _data[name] !== 'undefined') {
                   // basic type validation
-                  if (_data[name].constructor !== schema[name].type) {
+                  if (!getTypeValidate(schema[name].type)(_data[name])) {
                     errors.push({ name, type: 'type' });
+                    continue;
                   }
 
                   // custom schema validation
@@ -90,12 +82,14 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
                     const validate = schema[name].validate.bind(this);
                     if (!validate(_data[name])) {
                       errors.push({ name, type: 'custom' });
+                      continue;
                     }
                   }
                 } else if (full === true) {
                   // required validation
                   if (schema[name].required === true) { // eslint-disable-line no-lonely-if
                     errors.push({ name, type: 'required' });
+                    continue;
                   }
                 }
               }
@@ -107,11 +101,23 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
                 typeValidation: errors.filter(error => error.type === 'type').map(error => error.name),
                 customValidation: errors.filter(error => error.type === 'custom').map(error => error.name),
                 requiredValidation: errors.filter(error => error.type === 'required').map(error => error.name)
-              })); // TODO some error
+              }));
             } else {
               resolve(true);
             }
           });
+        }
+      });
+
+      Object.defineProperty(this, 'isSaved', {
+        get() {
+          return Boolean(this._data.id);
+        }
+      });
+
+      Object.defineProperty(this, 'selfie', {
+        get() {
+          return this._data;
         }
       });
 

@@ -6,19 +6,20 @@ module.exports = {
     node: true
   },
   parserOptions: {
-    sourceType: 'module',
+    sourceType: "module",
     ecmaVersion: 6,
     ecmaFeatures: {
       generators: true
     }
   },
-  extends: ['airbnb-base'],
+  extends: ["airbnb-base"],
   rules: { // these are the rules to work with airbnb style guide together
-    'comma-dangle': [2, 'never'], // disallow comma after the last propery of an object
-    'no-param-reassign': 0, // allow modify params
-    'func-names': 0, // anonymous functions still common
-    'no-underscore-dangle': 0, // disable for private methods
-    'no-restricted-syntax': ['error', 'WithStatement'],
-    'import/no-extraneous-dependencies': 0
+    "comma-dangle": [2, "never"], // disallow comma after the last propery of an object
+    "no-param-reassign": 0, // allow modify params
+    "func-names": 0, // anonymous functions still common
+    "no-underscore-dangle": 0, // disable for private methods
+    "no-restricted-syntax": ["error", "WithStatement"],
+    "no-continue": 0,
+    "import/no-extraneous-dependencies": 0
   }
 };
