@@ -1017,6 +1017,9 @@ describe('syncTable(force=false)', () => {
 
   it('drop the table if exists and creates a new table if force is true', (done) => {
     co(function* () {
+      const shouldNotExist = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
+      expect(shouldNotExist.length).to.equal(0);
+
       yield db.none('CREATE TABLE $1~ (id integer)', 'syncTest');
 
       const beforeSync = yield db.any('SELECT * FROM information_schema.columns WHERE table_name=$1', ['syncTest']);
