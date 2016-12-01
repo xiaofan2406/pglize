@@ -997,6 +997,7 @@ describe('syncTable(force=false)', () => {
     .catch(() => done());
   });
 
+  // travis unhappy about these three tests
   it('does nothing if force is false', (done) => {
     co(function* () {
       yield UserModel.syncTable();
