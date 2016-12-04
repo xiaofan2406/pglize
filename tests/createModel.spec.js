@@ -986,15 +986,15 @@ describe('syncTable(force=false)', () => {
   });
 
   afterEach('cleanup tables', (done) => {
-    db.none('DROP TABLE $1~', 'syncTest')
+    db.none('DROP TABLE IF EXISTS $1~', 'syncTest')
     .then(done)
-    .catch(() => done());
+    .catch(done);
   });
 
   beforeEach('cleanup tables', (done) => {
-    db.none('DROP TABLE $1~', 'syncTest')
+    db.none('DROP TABLE IF EXISTS $1~', 'syncTest')
     .then(done)
-    .catch(() => done());
+    .catch(done);
   });
 
   // travis unhappy about these three tests
