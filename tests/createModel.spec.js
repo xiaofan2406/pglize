@@ -1016,7 +1016,7 @@ describe('syncTable(force=false)', () => {
       expect(found.length).to.equal(4);
       const columnNames = found.map(i => i.column_name);
       expect(columnNames).to.include.members(['id', 'email', 'password', 'credit']);
-      // TODO criteria sync, primiay null etc.
+      // TODO criteria test, primiay null etc.
     })
     .then(done)
     .catch(done);
@@ -1037,9 +1037,6 @@ describe('syncTable(force=false)', () => {
       const columnNames = found.map(i => i.column_name);
       expect(columnNames).to.include.members(['id', 'email', 'password', 'credit']);
       // TODO criteria test, primiay null etc.
-
-      const result = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['notexistes']);
-      console.log(result);
     })
     .then(done)
     .catch(done);
