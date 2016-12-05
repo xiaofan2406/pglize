@@ -1038,7 +1038,7 @@ describe('syncTable(force=false)', () => {
       expect(columnNames).to.include.members(['id', 'email', 'password', 'credit']);
       // TODO criteria test, primiay null etc.
 
-      const result = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['syncTest']);
+      const result = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', ['notexistes']);
       console.log(result);
     })
     .then(done)
