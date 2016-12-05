@@ -281,11 +281,7 @@ module.exports = db => (modelName, schema, modelOptions = {}) => {
     value(force = false) {
       if (force === true) {
         return co(function* () {
-          const found = yield db.one('SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name=$1)', [tableName]);
-          if (found.exists === true) {
-            debug('syncTable: dropping table...', tableName);
-            yield db.none('DROP TABLE $1~', [tableName]);
-          }
+          yield db.none('DROP TABLE IF EXISTS $1~', [tableName]);
 
           const result = genTable(tableName, schema);
           debug('syncTable: creating table...', tableName);
