@@ -1,7 +1,7 @@
 const pg = require('../src')({
   host: 'localhost',
   port: 5432,
-  username: 'node',
+  user: 'node',
   password: 'password',
   database: 'pglize'
 });
