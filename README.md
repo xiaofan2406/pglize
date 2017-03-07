@@ -12,6 +12,7 @@
 
 ## TODO
 
+##### custom queries
 ##### relations
 ##### table creation, and re-creation during test env
 ##### migrations
