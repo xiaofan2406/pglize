@@ -2,9 +2,9 @@ module.exports = {
   test: {
     host: 'localhost',
     port: 5432,
-    user: 'node',
+    user: 'pglize_test',
     password: 'password',
-    database: 'pglize'
+    database: 'pglize_local_test'
   },
   travis: {
     host: 'localhost',
