@@ -1,4 +1,6 @@
 # pglize
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/xiaofan2406/pglize.svg)](https://greenkeeper.io/)
 [![Build Status][build-badge]][build] [![Coverage Status][coverage-badge]][coverage] [![Dependencies Status][dependencies-badge]][dependencies]
 
 [build-badge]: https://img.shields.io/travis/xiaofan2406/pglize.svg?style=flat-square
